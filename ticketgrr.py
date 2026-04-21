@@ -139,7 +139,7 @@ def main_panel_embed():
     status = "🔒 Trancado" if is_system_locked() else "🟢 Liberado"
 
     embed = discord.Embed(
-        title="🎫 ticket GRR",
+        title="🎫 Metas GRR",
         description=(
             "Clique no botão abaixo para criar seu ticket.\n\n"
             "Dentro do ticket você poderá enviar a ação que participou.\n"
