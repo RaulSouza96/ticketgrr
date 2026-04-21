@@ -7,9 +7,10 @@ import re
 import asyncio
 from datetime import datetime, UTC
 
-import os
-
 TOKEN = os.getenv("TOKEN")
+
+if not TOKEN:
+    raise Exception("TOKEN não encontrado nas variáveis de ambiente")
 
 CONFIG_FILE = "grr_config.json"
 DATA_FILE = "grr_data.json"
@@ -60,7 +61,6 @@ data = load_json(DATA_FILE, {
     "user_actions": {}
 })
 
-# trava anti duplicação
 processing_tickets = set()
 
 
@@ -743,7 +743,6 @@ class MainPanelView(discord.ui.View):
             return
 
         await interaction.response.defer()
-
         await set_global_lock(interaction.guild, True)
 
         try:
@@ -762,7 +761,6 @@ class MainPanelView(discord.ui.View):
             return
 
         await interaction.response.defer()
-
         await set_global_lock(interaction.guild, False)
 
         try:
@@ -782,7 +780,6 @@ async def on_ready():
 
         synced = await tree.sync()
         print(f"Comandos globais sincronizados: {len(synced)}")
-
     except Exception as e:
         print(f"Erro ao sincronizar: {e}")
 
