@@ -5,6 +5,7 @@ import json
 import os
 import re
 import asyncio
+import io
 from datetime import datetime, UTC
 
 TOKEN = os.getenv("TOKEN")
@@ -61,6 +62,7 @@ data = load_json(DATA_FILE, {
     "user_actions": {}
 })
 
+# trava anti duplicação
 processing_tickets = set()
 
 
@@ -139,7 +141,7 @@ def main_panel_embed():
     status = "🔒 Trancado" if is_system_locked() else "🟢 Liberado"
 
     embed = discord.Embed(
-        title="🎫 Metas GRR",
+        title="🎫 ticket GRR",
         description=(
             "Clique no botão abaixo para criar seu ticket.\n\n"
             "Dentro do ticket você poderá enviar a ação que participou.\n"
@@ -181,7 +183,7 @@ def waiting_print_embed(member: discord.Member, action_name: str):
     return embed
 
 
-def approval_embed(member: discord.Member, action_name: str, print_url: str):
+def approval_embed(member: discord.Member, action_name: str):
     embed = discord.Embed(
         title="📨 Solicitação de aprovação",
         description=(
@@ -193,7 +195,6 @@ def approval_embed(member: discord.Member, action_name: str, print_url: str):
         color=dark_blue(),
         timestamp=datetime.now(UTC)
     )
-    embed.add_field(name="Print", value=f"[Abrir print]({print_url})", inline=False)
     embed.set_footer(text=footer_text())
     return embed
 
@@ -743,6 +744,7 @@ class MainPanelView(discord.ui.View):
             return
 
         await interaction.response.defer()
+
         await set_global_lock(interaction.guild, True)
 
         try:
@@ -761,6 +763,7 @@ class MainPanelView(discord.ui.View):
             return
 
         await interaction.response.defer()
+
         await set_global_lock(interaction.guild, False)
 
         try:
@@ -780,6 +783,7 @@ async def on_ready():
 
         synced = await tree.sync()
         print(f"Comandos globais sincronizados: {len(synced)}")
+
     except Exception as e:
         print(f"Erro ao sincronizar: {e}")
 
@@ -844,8 +848,18 @@ async def on_message(message: discord.Message):
                         await bot.process_commands(message)
                         return
 
+                    file_bytes = await image_attachment.read()
+                    discord_file = discord.File(
+                        fp=io.BytesIO(file_bytes),
+                        filename=image_attachment.filename
+                    )
+
+                    embed = approval_embed(member, action_name)
+                    embed.set_image(url=f"attachment://{image_attachment.filename}")
+
                     await approval_channel.send(
-                        embed=approval_embed(member, action_name, image_attachment.url),
+                        embed=embed,
+                        file=discord_file,
                         view=ApprovalView(
                             requester_id=member.id,
                             action_name=action_name,
